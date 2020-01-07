@@ -90,11 +90,24 @@ type providerJSON struct {
 }
 
 // NewProvider uses the OpenID Connect discovery mechanism to construct a Provider.
+// The discovery endpoint used can be different from the issuer. This allows for the use
+// of an issuer that is present on the local network.
+// The issuer is the URL identifier for the service. For example: "https://accounts.google.com"
+func NewInternalProvider(ctx context.Context, issuer string, internalIssuer string) (*Provider, error) {
+	wellKnown := strings.TrimSuffix(internalIssuer, "/") + "/.well-known/openid-configuration"
+	return buildProvider(wellKnown, ctx, issuer)
+}
+
+// NewProvider uses the OpenID Connect discovery mechanism to construct a Provider.
 //
 // The issuer is the URL identifier for the service. For example: "https://accounts.google.com"
 // or "https://login.salesforce.com".
 func NewProvider(ctx context.Context, issuer string) (*Provider, error) {
 	wellKnown := strings.TrimSuffix(issuer, "/") + "/.well-known/openid-configuration"
+	return buildProvider(wellKnown, ctx, issuer)
+}
+
+func buildProvider(wellKnown string, ctx context.Context, issuer string) (*Provider, error) {
 	req, err := http.NewRequest("GET", wellKnown, nil)
 	if err != nil {
 		return nil, err
